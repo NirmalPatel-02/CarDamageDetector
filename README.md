@@ -15,6 +15,15 @@ Built for **insurance claims automation**, **used car valuation**, **rental insp
 
 ---
 
+### 🎨 Screenshots & Demo
+
+| Upload Screen                  | Result Modal (No Damage)           | Result Modal (Severe Damage)         |
+|-------------------------------|-------------------------------------|---------------------------------------|
+| ![Upload](assets/Home.png)  | ![Clean](assets/NonDamageCar.png)         | ![Severe](assets/HighDamagedCar.png)         |
+
+
+---
+
 ### 🧠 The 3-Stage AI Pipeline (All EfficientNet-B3 Transfer Learning)
 
 | Stage | Model Name                        | Dataset Size       | Classes                  | Accuracy | Trained On        |
@@ -35,13 +44,6 @@ Built for **insurance claims automation**, **used car valuation**, **rental insp
 | Damaged vs Undamaged Cars  | 6,000      | Kaggle Car Damage Dataset                 | (Private on request) |
 | Severity Classification    | 15,000     | Manually annotated (Minor/Moderate/Severe)| [Kaggle](https://www.kaggle.com/datasets/nirmalpatel02/damagedcarswithsavarity) |
 
----
-
-### 🎨 Screenshots & Demo
-
-| Upload Screen                  | Result Modal (No Damage)           | Result Modal (Severe Damage)         |
-|-------------------------------|-------------------------------------|---------------------------------------|
-| ![Upload](assets/Home.png)  | ![Clean](assets/NonDamageCar.png)         | ![Severe](assets/HighDamagedCar.png)         |
 
 ---
 
