@@ -1,19 +1,3 @@
----
-title: Car Damage Analysis AI
-emoji: 📊
-colorFrom: yellow
-colorTo: red
-sdk: docker
-pinned: false
-short_description: AI will Analysis Damage of car based of Photo.
----
-
-# 🚗 CarDamageAnalysis AI – Instant Car Damage Detection & Severity Assessment  
-**Insurance-Grade • 3-Stage Deep Learning • <5 Second Inference • Production Ready**
-
-
----
-
 ### 🚀 Project Overview
 **CarDamageAnalysis AI** is a **full-stack, production-grade computer vision system** that analyzes a single car photo and instantly returns:
 - Whether it contains a car
@@ -22,6 +6,8 @@ short_description: AI will Analysis Damage of car based of Photo.
 - Overall AI confidence score
 
 Built for **insurance claims automation**, **used car valuation**, **rental inspection**, and **repair estimation** — solving a **$10B+ global market**.
+
+### Live Url : https://nirmal-patel-car-damage-analysis-ai.hf.space/
 
 ---
 
