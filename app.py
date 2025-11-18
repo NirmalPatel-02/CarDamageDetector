@@ -22,6 +22,8 @@ severity_model = tf.keras.models.load_model('models/how_much_damage_model.keras'
 
 from tensorflow.keras.applications.efficientnet import preprocess_input as eff_preprocess
 
+first_load = True
+
 def prepare_image(img: Image.Image):
     img = img.convert("RGB")
     img = img.resize((224, 224))
@@ -39,6 +41,7 @@ async def home(request: Request):
 
 @app.post("/analyze")
 async def analyze_image(file: UploadFile = File(...)):
+    global first_load
     contents = await file.read()
     filename = f"uploads/{file.filename}"
     with open(filename, "wb") as f:
@@ -49,34 +52,39 @@ async def analyze_image(file: UploadFile = File(...)):
         x = prepare_image(img)
         x1 = eff_preprocess(x.astype('float32'))
 
-        # 1. Is it a car?
+        is_first_load = first_load
+        first_load = False  
+
         car_prob = float(car_model.predict(x1, verbose=0)[0][0])
-        car_confidence = (1 - car_prob) * 100
+        car_conf = (1 - car_prob) * 100
 
         if car_prob > 0.5:
             return {
                 "result": "no_car",
                 "confidence": f"{car_prob*100:.1f}%",
-                "image": image_to_base64(filename)
+                "image": image_to_base64(filename),
+                "is_first_load": is_first_load
             }
 
-        # 2. Is it damaged?
         good_prob = float(damage_model.predict(x1, verbose=0)[0][0])
-        damage_confidence = (1 - good_prob) * 100
+        damage_conf = (1 - good_prob) * 100
         is_damaged = good_prob < 0.5
 
         if not is_damaged:
+            overall_conf = (car_conf + (good_prob * 100)) / 2
             return {
                 "result": "undamaged",
-                "confidence": f"{(good_prob * 100):.2f}%",
-                "image": image_to_base64(filename)
+                "confidence": f"{overall_conf:.1f}%",
+                "image": image_to_base64(filename),
+                "is_first_load": is_first_load
             }
 
-        # 3. Severity
         pred = severity_model.predict(x1, verbose=0)[0]
         idx = np.argmax(pred)
         severity = ["Minor", "Moderate", "Severe"][idx]
         severity_conf = float(pred[idx]) * 100
+
+        overall_conf = (car_conf + damage_conf + severity_conf) / 3
 
         severity_messages = {
             "Minor": "Just a few scratches – nothing serious. Easy fix!",
@@ -87,15 +95,15 @@ async def analyze_image(file: UploadFile = File(...)):
         return {
             "result": "damaged",
             "severity": severity,
-            "severity_confidence": f"{severity_conf:.1f}%",
+            "overall_confidence": f"{overall_conf:.1f}%",
             "message": severity_messages[severity],
             "image": image_to_base64(filename),
-            "car_confidence": f"{car_confidence:.1f}%",
-            "damage_confidence": f"{damage_confidence:.1f}%"
+            "is_first_load": is_first_load
         }
 
     except Exception as e:
-        return {"result": "error", "message": "Failed to process image. Try another."}
+        print(f"Error: {e}")
+        return {"result": "error", "message": "Failed to process image.", "is_first_load": False}
 
 if __name__ == "__main__":
     uvicorn.run("app:app", host="0.0.0.0", port=8000, reload=True)

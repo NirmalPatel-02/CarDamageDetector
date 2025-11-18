@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CarGuard AI • Instant Damage Detection</title>
+    <title>Car Damage Analysis AI • Instant Damage Detection</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
     <link href="{{ url_for('static', path='/style.css') }}" rel="stylesheet">
@@ -11,11 +11,11 @@
 <body>
     <div class="container">
         <header>
-            <h1>CarGuard <span class="ai">AI</span></h1>
-            <p>Insurance-Grade • 3-Stage Neural Analysis • 99.5% Accuracy</p>
+            <h1>Car Damage Analysis <span class="ai">AI</span></h1>
+            <p>Insurance-Grade • 3-Stage Neural Analysis • Instant Damage Detection</p>
         </header>
 
-        <div class="upload-container" id="uploadContainer">
+        <div class="upload-container">
             <form id="uploadForm" enctype="multipart/form-data">
                 <input type="file" id="fileInput" name="file" accept="image/*" hidden>
                 <div class="drop-zone" id="dropZone">
@@ -25,16 +25,15 @@
                 </div>
                 <button type="submit" id="analyzeBtn" class="analyze-btn">
                     <span class="text">Analyze Damage</span>
-                    <span class="loader" style="display:none;"><i class="fas fa-spinner fa-spin"></i></span>
+                    <span class="loader"><i class="fas fa-spinner fa-spin"></i></span>
                 </button>
             </form>
         </div>
     </div>
 
-    <!-- Result Modal -->
     <div id="resultModal" class="modal">
         <div class="modal-content">
-            <span class="close">&times;</span>
+            <span class="close">×</span>
             <div id="modalBody"></div>
         </div>
     </div>
@@ -50,39 +49,25 @@
         const modal = document.getElementById('resultModal');
         const modalBody = document.getElementById('modalBody');
         const closeBtn = document.querySelector('.close');
+        let hasRunOnce = false;
 
-        // Click anywhere in drop zone
         dropZone.addEventListener('click', () => fileInput.click());
 
-        // Preview image
-        fileInput.addEventListener('change', (e) => {
+        fileInput.addEventListener('change', e => {
             if (e.target.files[0]) {
                 const reader = new FileReader();
-                reader.onload = (ev) => {
+                reader.onload = ev => {
                     preview.src = ev.target.result;
                     preview.style.display = 'block';
                     dropZone.classList.add('has-image');
-                }
+                };
                 reader.readAsDataURL(e.target.files[0]);
             }
         });
 
-        // Drag & drop
-        ['dragover', 'dragenter'].forEach(evt => {
-            dropZone.addEventListener(evt, (e) => {
-                e.preventDefault();
-                dropZone.classList.add('drag-over');
-            });
-        });
-
-        ['dragleave', 'dragend', 'drop'].forEach(evt => {
-            dropZone.addEventListener(evt, (e) => {
-                e.preventDefault();
-                dropZone.classList.remove('drag-over');
-            });
-        });
-
-        dropZone.addEventListener('drop', (e) => {
+        ['dragover', 'dragenter'].forEach(evt => dropZone.addEventListener(evt, e => { e.preventDefault(); dropZone.classList.add('drag-over'); }));
+        ['dragleave', 'dragend', 'drop'].forEach(evt => dropZone.addEventListener(evt, e => { e.preventDefault(); dropZone.classList.remove('drag-over'); }));
+        dropZone.addEventListener('drop', e => {
             e.preventDefault();
             if (e.dataTransfer.files.length) {
                 fileInput.files = e.dataTransfer.files;
@@ -92,81 +77,84 @@
             }
         });
 
-        // Submit
-        form.addEventListener('submit', async (e) => {
+        form.addEventListener('submit', async e => {
             e.preventDefault();
             if (!fileInput.files[0]) return alert("Please select an image");
 
             const formData = new FormData();
             formData.append("file", fileInput.files[0]);
 
-            btnText.style.display = 'none';
             loader.style.display = 'inline-block';
+            btnText.style.display = 'none';
+            if (!hasRunOnce) {
+                btnText.innerHTML = "Waking up AI models… <small>(First load ~15s)</small>";
+            } else {
+                btnText.textContent = "AI is analyzing your car…";
+            }
             analyzeBtn.disabled = true;
 
             try {
-                const res = await fetch('/analyze', {
-                    method: 'POST',
-                    body: formData
-                });
+                const res = await fetch('/analyze', { method: 'POST', body: formData });
                 const data = await res.json();
-
+                hasRunOnce = true;
                 showResult(data);
             } catch (err) {
                 showResult({result: "error", message: "Network error. Try again."});
             } finally {
-                btnText.style.display = 'inline';
                 loader.style.display = 'none';
+                btnText.style.display = 'inline';
+                btnText.innerHTML = "Analyze Damage";
                 analyzeBtn.disabled = false;
             }
         });
 
         function showResult(data) {
-            let html = '';
             const img = `<img src="data:image/jpeg;base64,${data.image}" class="result-image">`;
 
+            let content = '';
             if (data.result === "no_car") {
-                html = `
+                content = `
                     <div class="result-card error">
                         <i class="fas fa-car-side-slash"></i>
-                        <h2>Oops! No Car Detected</h2>
-                        <p>We couldn't find a car in this image. Please upload a clear photo of a vehicle.</p>
-                        <p><strong>Confidence:</strong> ${data.confidence}</p>
+                        <h2>No Car Detected</h2>
+                        <p>Please upload a clear photo of a vehicle</p>
+                        <div class="conf">Confidence: ${data.confidence}</div>
                         ${img}
                     </div>`;
             } else if (data.result === "undamaged") {
-                html = `
+                content = `
                     <div class="result-card success">
-                        <i class="fas fa-check-circle"></i>
-                        <h2>Perfect Condition!</h2>
-                        <p>Your car looks brand new. No damage detected.</p>
-                        <p><strong>Confidence:</strong> ${data.confidence}</p>
+                        <i class="fas fa-shield-alt"></i>
+                        <h2>No Damage Found!</h2>
+                        <p>Your car is in <strong>perfect condition</strong></p>
+                        <div class="conf big">AI Confidence: ${data.confidence}</div>
                         ${img}
                     </div>`;
             } else if (data.result === "damaged") {
-                const color = data.severity === "Severe" ? "#ff0066" : data.severity === "Moderate" ? "#ff8c00" : "#00dbde";
-                html = `
-                    <div class="result-card damaged" style="--accent: ${color}">
+                const color = data.severity === "Severe" ? "#ff0066" : data.severity === "Moderate" ? "#ff5e00" : "#00dbde";
+                content = `
+                    <div class="result-card damaged" style="--accent:${color}">
                         <i class="fas fa-exclamation-triangle"></i>
-                        <h2>${data.severity} Damage Detected</h2>
+                        <h2>${data.severity} Damage</h2>
                         <p>${data.message}</p>
-                        <div class="stats">
-                            <div><span>Car Detection</span><strong>${data.car_confidence}</strong></div>
-                            <div><span>Damage Confirmed</span><strong>${data.damage_confidence}</strong></div>
-                            <div><span>Severity Level</span><strong>${data.severity_confidence}</strong></div>
-                        </div>
+                        <div class="conf big">AI Confidence: ${data.overall_confidence}</div>
                         ${img}
                     </div>`;
             } else {
-                html = `<div class="result-card error"><h2>Error</h2><p>${data.message}</p></div>`;
+                content = `<div class="result-card error"><h2>Error</h2><p>${data.message}</p></div>`;
             }
 
-            modalBody.innerHTML = html + `<button class="retry-btn" onclick="location.reload()">Scan Another Car</button>`;
+            modalBody.innerHTML = `
+                <div class="modal-inner">
+                    ${content}
+                    <button class="retry-btn" onclick="location.reload()">Scan Another Car</button>
+                </div>
+            `;
             modal.style.display = 'flex';
         }
 
         closeBtn.onclick = () => modal.style.display = 'none';
-        window.onclick = (e) => { if (e.target === modal) modal.style.display = 'none'; };
+        window.onclick = e => { if (e.target === modal) modal.style.display = 'none'; };
     </script>
 </body>
 </html>
